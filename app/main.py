@@ -1,36 +1,30 @@
-from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
-import sqlite3
+from fastapi.responses import JSONResponse
 from .routers import highscores
 from .database import QueryManager
+from .exceptions import exceptions
 
 queryManager = QueryManager.QueryManager()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # establish db connection
-    connection = sqlite3.connect("../toc.db")
-
-    # cursor obj to execute SQL
-    cursor = connection.cursor()
     # create empty highscores table if not exists
-    cursor.execute(queryManager.createHighscoresTable)
-
-    # commit the changes
-    connection.commit()
-
-    # pass connection and cursor to app state
-    app.state.dbConnection = connection
-    app.state.dbCursor = cursor
+    await queryManager.execute_query(queryManager.createHighscoresTable)
     
     yield
 
-    connection.close()
-    
 
+    
 app = FastAPI(lifespan=lifespan)
 app.include_router(highscores.router)
+
+@app.exception_handler(exceptions.DatabaseConnectionError)
+async def db_connection_failed_handler(request: Request, exc: exceptions.DatabaseConnectionError):
+    return JSONResponse(
+        status_code=503,
+        content={"message": "Service temporarily unavailable, please try again later."},
+    )
 
 
 @app.get("/")
