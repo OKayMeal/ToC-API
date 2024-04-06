@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from databases import Database
 from ..exceptions import exceptions
 
@@ -34,6 +35,7 @@ class QueryManager:
                                 CREATE TABLE IF NOT EXISTS keys 
                                 (
                                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    type TEXT NOT NULL,
                                     key TEXT NOT NULL,
                                     expires TEXT NOT NULL
                                 );
@@ -53,6 +55,9 @@ class QueryManager:
     # DELETE ROWS QUERIES
     deleteKeyType =         """
                                 DELETE FROM keys WHERE type = :type;
+                            """
+    deleteKeyByID =         """
+                                DELETE FROM keys WHERE id = :id;
                             """
 
 
@@ -83,24 +88,75 @@ class QueryManager:
             
             else:
                 # compare dates and clear older and if only one and not expired just leave it
-                pass
-        
 
-        if dbEmpty:
-            # key in .json, but not in DB -> post a fresh key to DB
+                if len(allSaveKeys) == 1:
+                    if self.is_expired(allSaveKeys[0]["expires"]):
+                        # the only key in DB is expired and no .json so raise error
+                        raise exceptions.KeyExpired("The key found in DB is expired")
+                    else:
+                        # do nothing, keep the non-expired key in DB - assume it's the up-to-date one to use
+                        print("The key found in DB is NOT expired. Please remember to add UPDATED ./key.json file!")
+                        return
+                else:
+                    # there are more than one key in DB
+                    keysToDelete: list[dict[str, int]] = []
+                    keysNotExpired: list[dict] = []
+
+                    # iterate over the keys and seperate expired from non-expired
+                    for key in allSaveKeys:
+                        id = { "id": key["id"] }
+                        date = { "expires": key["expires"] }
+                        expiresDate = date["expires"]
+
+                        if self.is_expired(expiresDate):
+                            keysToDelete.append(id)
+                        else:
+                            keysNotExpired.append({ **id, **date })
+                    
+                    if len(keysToDelete) == len(allSaveKeys):
+                        # means all of the keys in DB are expired so it's high time to delete them
+                        print("All of the keys found in DB are expired.")
+                        print("Deleting the expired keys...")
+                        await self.execute_many_query(self.deleteKeyByID, keysToDelete)
+                        raise Exception("All of the keys found in DB are expired.")
+                    
+                    else:
+                        # means there are some keys that aren't expired - find the most recent
+                        today = datetime.now()
+                        minDeltaTime = -1
+                        for key in keysNotExpired:
+                            # calc delta time
+                            deltaTime = today - datetime.strptime(key["expires"], "%Y-%m-%d %H:%M")
+                            deltaTimeInt = int(deltaTime.total_seconds())
+                            key["deltaTime"] = deltaTimeInt
+
+                            # check if it's the most recent
+                            minDeltaTime = min(minDeltaTime, key["deltaTime"])
+                          
+                        
+                        for key in keysNotExpired:
+                            # check for all older than the most recent and delete them
+                            if key["deltaTime"] != minDeltaTime:
+                                keysToDelete.append({ "id": key["id"] })
+                        
+                        print("Not expired key has been found in db. However, please update your key.json file!")
+                        return await self.execute_many_query(self.deleteKeyByID, keysToDelete)
+                        
+
+
+        if not dbEmpty:
+            # delete all keys of type "save"
+            print("Deleting all old keys of type 'save'")
+            await self.execute_query(self.deleteKeyType, { "type": "save" })
+
+        # check if .json key not expired
+        if not self.is_expired(data["expires"]):
             return await self.execute_query(self.postKey, { "type": data["type"], "key": data["key"], "expires": data["expires"] })
-        
         else:
-            # compare dates with the .json one and if .json is fresh, clear all and post .json or if one of db's is fresh then clear rest
-            pass
+            raise Exception("Key from .json expired")
+         
 
 
-
-
-    def compare_expiry_dates(self):
-        pass
-
-    
     def load_key(self, file_path: str):
         """
         Loads the API key from .json file
@@ -110,8 +166,8 @@ class QueryManager:
                 # parse the JSON data to dict
                 data: dict[str, str] = json.load(file)
 
-                if not isinstance(data, dict[str, str]):
-                    raise exceptions.WrongFileFormat("The data loaded is not of dict[str, str] type")
+                if not isinstance(data, dict):
+                    raise exceptions.WrongFileFormat("The data loaded is not of dict type")
                 
                 if "type" not in data or "key" not in data or "expires" not in data:
                     raise exceptions.WrongFileFormat("The data loaded has wrong format - missing keys")
@@ -121,6 +177,24 @@ class QueryManager:
             raise exceptions.FileNotFoundError("Failed to load key.json file") from e
 
         return data
+
+
+    def is_expired(self, dateStr: str):
+        """
+        Checks if the date is expired
+        """
+        today = datetime.now()
+        date = datetime.strptime(dateStr, "%Y-%m-%d %H:%M")
+
+        return today > date
+    
+
+    async def create_empty_tables(self):
+        """
+        Creates all required empty tables if they don't exist already
+        """
+        await self.execute_query(self.createHighscoresTable)
+        await self.execute_query(self.createKeysTable)
 
 
     async def execute_query(self, query: str, values: dict | None = None):
@@ -159,7 +233,6 @@ class QueryManager:
         """
         Connects to SQLite db
         """
-
         try:
             await self.db.connect()
         except Exception as e:
