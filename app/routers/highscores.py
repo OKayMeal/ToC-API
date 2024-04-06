@@ -1,6 +1,6 @@
-from typing import Union
 from fastapi import APIRouter
 from ..database import QueryManager
+from ..models.HighScore import HighScore
 
 router = APIRouter()
 queryManager = QueryManager.QueryManager()
@@ -11,3 +11,9 @@ async def read_highscores():
     highscores = await queryManager.fetch_rows(queryManager.readAllHighScores)
     
     return highscores
+
+
+@router.post("/highscores")
+async def post_highscores(highscore: HighScore):
+    
+    return highscore
