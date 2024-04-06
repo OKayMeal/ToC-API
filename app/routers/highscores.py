@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from ..dependencies import Dependencies
 from ..database import QueryManager
 from ..models.HighScore import HighScore
 
@@ -14,6 +15,6 @@ async def read_highscores():
 
 
 @router.post("/highscores")
-async def post_highscores(highscore: HighScore):
+async def post_highscores(highscore: HighScore, api_key: str = Depends(Dependencies.verify_API_key)):
     
     return highscore
