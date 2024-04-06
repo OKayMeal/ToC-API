@@ -1,9 +1,13 @@
+import json
 from databases import Database
 from ..exceptions import exceptions
 
 class QueryManager:
     DATABASE_URL = "sqlite+aiosqlite:///./toc.db"
+    KEY_URL = "./key.json"
     db = Database(DATABASE_URL)
+
+    # CREATE TABLES QUERIES
     createHighscoresTable = """
                                 CREATE TABLE IF NOT EXISTS highscores 
                                 (
@@ -26,9 +30,97 @@ class QueryManager:
                                     bosses_defeated TEXT NOT NULL
                                 );
                             """
-    readAllHighScores = """
-                            SELECT * FROM highscores;
-                        """
+    createKeysTable =       """
+                                CREATE TABLE IF NOT EXISTS keys 
+                                (
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    key TEXT NOT NULL,
+                                    expires TEXT NOT NULL
+                                );
+                            """
+    # READ ROWS QUERIES
+    readAllKeysType =       """
+                                SELECT * FROM keys WHERE type = :type;
+                            """
+    readAllHighScores =     """
+                                SELECT * FROM highscores;
+                            """
+    # POST ROWS QUERIES
+    postKey =               """
+                                INSERT INTO keys (type, key, expires)
+                                VALUES (:type, :key, :expires);
+                            """
+    # DELETE ROWS QUERIES
+    deleteKeyType =         """
+                                DELETE FROM keys WHERE type = :type;
+                            """
+
+
+    async def check_keys(self):
+        """
+        Handles the process of checking the API key on the server start.
+        First it attempts to load the fresh key from .json and compares it with DB.
+        Provided the .json key is up-to-date, it cleans the DB from old keys and puts there the .json one
+        """
+        # fetch all keys of type "save" from DB
+        allSaveKeys = await self.fetch_rows(self.readAllKeysType, { "type": "save" })
+        dbEmpty = False
+
+        if len(allSaveKeys) == 0:
+            dbEmpty = True
+
+
+        try:
+            # try to load key.json file
+            data = self.load_key(self.KEY_URL)
+            print(data)
+
+        except (exceptions.FileNotFoundError, exceptions.WrongFileFormat) as e:
+            print(f"Exception: {e}")
+
+            if dbEmpty:
+                raise Exception("API key of type 'save' not found in DB")
+            
+            else:
+                # compare dates and clear older and if only one and not expired just leave it
+                pass
+        
+
+        if dbEmpty:
+            # key in .json, but not in DB -> post a fresh key to DB
+            return await self.execute_query(self.postKey, { "type": data["type"], "key": data["key"], "expires": data["expires"] })
+        
+        else:
+            # compare dates with the .json one and if .json is fresh, clear all and post .json or if one of db's is fresh then clear rest
+            pass
+
+
+
+
+    def compare_expiry_dates(self):
+        pass
+
+    
+    def load_key(self, file_path: str):
+        """
+        Loads the API key from .json file
+        """
+        try:
+            with open(file_path, 'r') as file:
+                # parse the JSON data to dict
+                data: dict[str, str] = json.load(file)
+
+                if not isinstance(data, dict[str, str]):
+                    raise exceptions.WrongFileFormat("The data loaded is not of dict[str, str] type")
+                
+                if "type" not in data or "key" not in data or "expires" not in data:
+                    raise exceptions.WrongFileFormat("The data loaded has wrong format - missing keys")
+
+
+        except Exception as e:
+            raise exceptions.FileNotFoundError("Failed to load key.json file") from e
+
+        return data
 
 
     async def execute_query(self, query: str, values: dict | None = None):
