@@ -14,3 +14,8 @@ class FileNotFoundError(Exception):
 class WrongFileFormat(Exception):
     """Custom exception for wrong file format."""
     pass
+
+
+class KeyExpired(Exception):
+    """Custom exception for an expired key."""
+    pass
