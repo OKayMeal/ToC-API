@@ -1,8 +1,9 @@
 from pydantic import BaseModel, field_validator
 from typing import ClassVar
 import re
+from .ParentModel import ParentModel
 
-class HighScore(BaseModel):
+class HighScore(ParentModel):
     # REQUEST BODY FIELDS #
     name: str
     date: str | None = None # handle this bad boy TODO...
@@ -128,9 +129,7 @@ class HighScore(BaseModel):
 
     @field_validator('equipment')
     def equipment_validator(cls, equipment: list[str]):
-        # TODO...
-        # for example check if it consists real game items
-        return equipment
+        return cls.validate_list_values("equipment", equipment)
     
 
     @field_validator('level')
@@ -163,63 +162,7 @@ class HighScore(BaseModel):
         return cls.validate_numbers_boundaries("gold_looted", gold_looted)
     
 
-    @field_validator('defense')
+    @field_validator('bosses_defeated')
     def bosses_defeated_validator(cls, bosses_defeated: list[str]):
-        # TODO...
-        # check if the values in a list actually exist in game
-        return bosses_defeated
+        return cls.validate_list_values("bosses_defeated", bosses_defeated)
     
-
-
-    # GENERIC VALIDATING METHODS #
-    @classmethod
-    def validate_numbers_boundaries(cls, fieldName: str, value: int):
-        """
-        Performs a basic validation of boundaries for a int field
-        """
-        minVal = cls.numbersBoundaries[fieldName]["min"]
-        maxVal = cls.numbersBoundaries[fieldName]["max"]
-
-        if (minVal > value > maxVal):
-            raise ValueError(f"{fieldName} value must be between {minVal} and {maxVal}")
-        
-        return value
-    
-
-    @classmethod
-    def validate_list_values(cls, fieldName: str, valuesList: list[str]):
-        """
-        Performs a basic validation checking if the str values in a list exist in the game.
-        e.g. check if list of equipment actually consists of the items that exist in the game
-        """
-        count = {
-            "ankhSilver": 0,
-            "ankhGolden": 0,
-        }
-
-        for value in valuesList:
-            # check if the list holds an invalid value
-            if not value in cls.validListValues[fieldName]:
-                raise ValueError(f"Invalid value '{value}' found for {fieldName}")
-            
-            # count occurences of items that are allowed to be duplicates
-            if value == 'ankhSilver' or value == 'ankhGolden':
-                count[value] += 1
-
-
-        # check if the list holds duplicates
-        valuesSet = set(valuesList)
-        if count["ankhGolden"] > 1 and count["ankhSilver"] > 1:
-            if (len(valuesSet) != (len(valuesList) - count["ankhGolden"] - count["ankhSilver"] - 2)):
-                raise ValueError(f"Found invalid duplicates of values")
-        elif count["ankhGolden"] > 1:
-            if (len(valuesSet) != (len(valuesList) - count["ankhGolden"] - 1)):
-                raise ValueError(f"Found invalid duplicates of values")
-        elif count["ankhSilver"] > 1:
-            if (len(valuesSet) != (len(valuesList) - count["ankhSilver"] - 1)):
-                raise ValueError(f"Found invalid duplicates of values")
-        
-        if len(valuesSet) != len(valuesList):
-            raise ValueError(f"Found invalid duplicates of values")
-            
-        return valuesList
