@@ -1,6 +1,5 @@
-from pydantic import BaseModel, field_validator
+from pydantic import field_validator
 from typing import ClassVar
-import re
 from .ParentModel import ParentModel
 
 class HighScore(ParentModel):
@@ -79,32 +78,12 @@ class HighScore(ParentModel):
     # FIELD VALIDATORS #
     @field_validator('name')
     def name_validator(cls, name: str):
-        if len(name) > 30:
-            raise ValueError('Name cannot be longer than 30 characters')
-        if len(name) == 0:
-            raise ValueError('Name cannot be empty')
-        
-        return name
+        return cls.validate_string_length("name", name, 30, True)
     
 
     @field_validator('time')
     def time_validator(cls, time: str):
-        # check the time format using regex
-        if not re.match(r'^\d{2}:\d{2}:\d{2}$', time):
-            raise ValueError('Time must be in HH:MM:SS format')
-        
-        # split the string into hours, minutes, and seconds
-        hours, minutes, seconds = map(int, time.split(':'))
-
-        # Validate hours, minutes, and seconds
-        if not (0 <= hours <= 23):
-            raise ValueError('Hours must be between 00 and 23')
-        if not (0 <= minutes <= 59):
-            raise ValueError('Minutes must be between 00 and 59')
-        if not (0 <= seconds <= 59):
-            raise ValueError('Seconds must be between 00 and 59')
-
-        return time
+        return cls.validate_time(time)
     
 
     @field_validator('hp')

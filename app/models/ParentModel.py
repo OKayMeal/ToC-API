@@ -1,3 +1,4 @@
+import re
 from pydantic import BaseModel
 from typing import ClassVar
 
@@ -67,5 +68,38 @@ class ParentModel(BaseModel):
         return valuesList
     
 
-    # @classmethod
-    # def validate_time(cls, )
+    @classmethod
+    def validate_time(cls, time: str):
+        """
+        Performs a basic validation of time string
+        """
+        # check the time format using regex
+        if not re.match(r'^\d{2}:\d{2}:\d{2}$', time):
+            raise ValueError('Time must be in HH:MM:SS format')
+        
+        # split the string into hours, minutes, and seconds
+        hours, minutes, seconds = map(int, time.split(':'))
+
+        # Validate hours, minutes, and seconds
+        if not (0 <= hours <= 23):
+            raise ValueError('Hours must be between 00 and 23')
+        if not (0 <= minutes <= 59):
+            raise ValueError('Minutes must be between 00 and 59')
+        if not (0 <= seconds <= 59):
+            raise ValueError('Seconds must be between 00 and 59')
+
+        return time
+    
+
+    @classmethod
+    def validate_string_length(cls, fieldName: str, string: str, maxLength: int, canBeEmpty: bool = False):
+        """
+        Performs a basic validation of string length
+        """
+        if len(string) > maxLength:
+            raise ValueError(f'{fieldName} cannot be longer than {maxLength} characters')
+         
+        if (not canBeEmpty and len(string) == 0):
+            raise ValueError(f'{fieldName} cannot be empty')
+        
+        return string
