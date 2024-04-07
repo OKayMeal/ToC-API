@@ -1,5 +1,5 @@
-from multiprocessing import Value
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
+from typing import ClassVar
 import re
 
 class HighScore(BaseModel):
@@ -22,7 +22,7 @@ class HighScore(BaseModel):
     bosses_defeated: list[str]
 
     # VALID VALUES FOR VALIDATION PURPOSES #
-    numbersBoundaries = {
+    numbersBoundaries: ClassVar[dict[str, dict[str, int]]] = {
         "hp": {
             "min": 150,
             "max": 999
@@ -64,7 +64,7 @@ class HighScore(BaseModel):
             "max": 999
         },
     }
-    validListValues = {
+    validListValues: ClassVar[dict[str, list[str]]] = {
         "equipment": [
             'BootsOfHaste', 'NobleArmor', 'FireSword', 'ScarabShield', 'WandOfInferno',
             'SkullStaff', 'ankhGolden', 'ankhSilver',
@@ -76,7 +76,7 @@ class HighScore(BaseModel):
 
 
     # FIELD VALIDATORS #
-    @validator('name')
+    @field_validator('name')
     def name_validator(cls, name: str):
         if len(name) > 30:
             raise ValueError('Name cannot be longer than 30 characters')
@@ -86,7 +86,7 @@ class HighScore(BaseModel):
         return name
     
 
-    @validator('time')
+    @field_validator('time')
     def time_validator(cls, time: str):
         # check the time format using regex
         if not re.match(r'^\d{2}:\d{2}:\d{2}$', time):
@@ -106,64 +106,64 @@ class HighScore(BaseModel):
         return time
     
 
-    @validator('hp')
+    @field_validator('hp')
     def hp_validator(cls, hp: int):
         return cls.validate_numbers_boundaries("hp", hp)
     
 
-    @validator('attack')
+    @field_validator('attack')
     def attack_validator(cls, attack: int):
         return cls.validate_numbers_boundaries("attack", attack)
     
 
-    @validator('defense')
+    @field_validator('defense')
     def defense_validator(cls, defense: int):
         return cls.validate_numbers_boundaries("defense", defense)
     
 
-    @validator('speed')
+    @field_validator('speed')
     def speed_validator(cls, speed: int):
         return cls.validate_numbers_boundaries("speed", speed)
     
 
-    @validator('equipment')
+    @field_validator('equipment')
     def equipment_validator(cls, equipment: list[str]):
         # TODO...
         # for example check if it consists real game items
         return equipment
     
 
-    @validator('level')
+    @field_validator('level')
     def level_validator(cls, level: int):
         return cls.validate_numbers_boundaries("level", level)
     
 
-    @validator('traps')
+    @field_validator('traps')
     def traps_validator(cls, traps: int):
         return cls.validate_numbers_boundaries("traps", traps)
     
 
-    @validator('keys')
+    @field_validator('keys')
     def keys_validator(cls, keys: int):
         return cls.validate_numbers_boundaries("keys", keys)
     
 
-    @validator('gold')
+    @field_validator('gold')
     def gold_validator(cls, gold: int):
         return cls.validate_numbers_boundaries("gold", gold)
     
 
-    @validator('enemies_killed')
+    @field_validator('enemies_killed')
     def enemies_killed_validator(cls, enemies_killed: int):
         return cls.validate_numbers_boundaries("enemies_killed", enemies_killed)
     
 
-    @validator('gold_looted')
+    @field_validator('gold_looted')
     def gold_looted_validator(cls, gold_looted: int):
         return cls.validate_numbers_boundaries("gold_looted", gold_looted)
     
 
-    @validator('defense')
+    @field_validator('defense')
     def bosses_defeated_validator(cls, bosses_defeated: list[str]):
         # TODO...
         # check if the values in a list actually exist in game
