@@ -1,6 +1,7 @@
+from datetime import datetime
 import re
 from pydantic import BaseModel
-from typing import ClassVar
+from typing import Any, ClassVar
 
 class ParentModel(BaseModel):
     numbersBoundaries: ClassVar[dict[str, dict[str, int]]] = {
@@ -12,6 +13,54 @@ class ParentModel(BaseModel):
     validListValues: ClassVar[dict[str, list[str]]] = {
         "field": ['value1', 'value2']
     }
+
+
+    # DATA CLEANUP METHODS #
+    @classmethod
+    def clean_data(cls, modelDict: dict[str, Any]):
+        for field, value in modelDict.items():
+            # convert all boolean fields to ints
+            if isinstance(value, bool):
+                modelDict[field] = int(value)
+            
+            # add current date
+            if field == 'date':
+                modelDict[field] = cls.add_current_date()
+
+            # turn all arrays into single strings
+            if isinstance(value, list):                
+                modelDict[field] = cls.convert_array_to_string(modelDict[field])
+            
+        return modelDict
+    
+
+    @classmethod
+    def convert_array_to_string(cls, array: list[str] | list[int]) -> str:
+        """
+        Converts arrays of strings or integers to a single string with ', ' as delimiter
+        """
+        singleStr = ''
+        if array == []:
+            return singleStr
+        
+        for index, item in enumerate(array):
+            if isinstance(item, int):
+                item = str(item)
+                
+            singleStr += item
+            if index != len(array) - 1:
+                singleStr += ', '
+
+        return singleStr
+        
+
+    @classmethod
+    def add_current_date(cls):
+        """
+        Returns a current date in a string format 'YYYY-MM-DD HH:MM'
+        """
+        return datetime.now().strftime('%Y-%m-%d %H:%M')
+
 
     # GENERIC VALIDATING METHODS #
     @classmethod
