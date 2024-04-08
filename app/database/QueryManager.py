@@ -13,6 +13,7 @@ class QueryManager:
                                 CREATE TABLE IF NOT EXISTS highscores 
                                 (
                                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    uuid TEXT NOT NULL,
                                     name TEXT NOT NULL,
                                     date TEXT NOT NULL,
                                     time TEXT NOT NULL,
@@ -51,6 +52,20 @@ class QueryManager:
     postKey =               """
                                 INSERT INTO keys (type, key, expires)
                                 VALUES (:type, :key, :expires);
+                            """
+    postHighScore =         """
+                                INSERT INTO highscores (
+                                    uuid, name, date, time, hp, attack, defense,
+                                    speed, equipment, level, ng, traps,
+                                    keys, gold, enemies_killed, gold_looted,
+                                    bosses_defeated
+                                )
+                                VALUES (
+                                    :uuid, :name, :date, :time, :hp, :attack, :defense,
+                                    :speed, :equipment, :level, :ng, :traps,
+                                    :keys, :gold, :enemies_killed, :gold_looted,
+                                    :bosses_defeated
+                                );
                             """
     # DELETE ROWS QUERIES
     deleteKeyType =         """

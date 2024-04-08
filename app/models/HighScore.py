@@ -5,7 +5,7 @@ from .ParentModel import ParentModel
 class HighScore(ParentModel):
     # REQUEST BODY FIELDS #
     name: str
-    date: str | None = None # handle this bad boy TODO...
+    date: str | None = None
     time: str
     hp: int
     attack: int

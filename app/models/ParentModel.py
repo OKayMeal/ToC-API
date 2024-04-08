@@ -1,9 +1,11 @@
 from datetime import datetime
+from typing import Any, ClassVar
 import re
 from pydantic import BaseModel
-from typing import Any, ClassVar
+import uuid
 
 class ParentModel(BaseModel):
+    uuid: str | None = None
     numbersBoundaries: ClassVar[dict[str, dict[str, int]]] = {
         "field": {
             "min": 0,
@@ -23,13 +25,15 @@ class ParentModel(BaseModel):
             if isinstance(value, bool):
                 modelDict[field] = int(value)
             
-            # add current date
-            if field == 'date':
-                modelDict[field] = cls.add_current_date()
-
             # turn all arrays into single strings
             if isinstance(value, list):                
                 modelDict[field] = cls.convert_array_to_string(modelDict[field])
+        
+        # add current date
+        modelDict["date"] = cls.add_current_date()
+
+        # add uuid
+        modelDict["uuid"] = str(uuid.uuid4())
             
         return modelDict
     
