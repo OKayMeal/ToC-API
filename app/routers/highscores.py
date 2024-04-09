@@ -9,15 +9,16 @@ queryManager = QueryManager.QueryManager()
 
 @router.get("/highscores")
 async def read_highscores():
-    
     highscores = await queryManager.fetch_rows(queryManager.readAllHighScores)
+
+    # reconvert from SQLite data format
+    highscores = HighScore.revert_clean_data(highscores, ['ng'], ['equipment', 'bosses_defeated'])
     
     return highscores
 
 
 @router.post("/highscores", status_code=status.HTTP_201_CREATED)
 async def post_highscores(highscore: HighScore, api_key: str = Depends(Dependencies.verify_API_key)):
-    
     modelDict = highscore.clean_data(highscore.model_dump())
     
     try:

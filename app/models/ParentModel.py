@@ -19,7 +19,41 @@ class ParentModel(BaseModel):
 
     # DATA CLEANUP METHODS #
     @classmethod
+    def revert_clean_data(cls, rows: list[dict[str, Any]] | list[Any], booleanFields: list[str], arrayFields: list[str]):
+        """
+        Reverts the data clean up that was performed in order to save data in SQLite db
+        This means converting bool fields from int (as saved in db - 0 or 1) back to bool
+        as well as strings to arrays of values (for the arrays of values turned into single string)
+        The fields that are aimed for reconverting are to be passed as a list of strings - booleanFields and arrayFields respectively
+        """
+        # the format of data needs to get converted to list of dicts - probably from list of Record's
+        rowsDicts = []
+        for row in rows:
+            rowsDicts.append(dict(row))
+
+        # revert the data from SQLite format (e.g. int bools to actual boolean)    
+        for row in rowsDicts:
+            for field, value in row.items():
+                # re-convert all boolean fields to ints
+                if field in booleanFields and isinstance(value, int):
+                    row[field] = bool(value)
+                
+                # re-convert all singleStrings back to arrayFields
+                if field in arrayFields:
+                    row[field] = cls.convert_string_back_to_array(row[field], ', ')
+
+            # delete auto-increment id from db
+            del row["id"]
+        
+        return rowsDicts
+
+
+    @classmethod
     def clean_data(cls, modelDict: dict[str, Any]):
+        """
+        Performs a data clean up preparing it for SQLite db
+        This means converting bools to int (0 or 1) and arrays to single strings
+        """
         for field, value in modelDict.items():
             # convert all boolean fields to ints
             if isinstance(value, bool):
@@ -36,6 +70,28 @@ class ParentModel(BaseModel):
         modelDict["uuid"] = str(uuid.uuid4())
             
         return modelDict
+    
+
+    @classmethod
+    def convert_string_back_to_array(cls, singleStr: str, delimiter: str) -> list[str] | list[int]:
+        """
+        Converts string back to an array of integers or strings
+        """
+        arr = []
+        if singleStr == '':
+            return arr
+
+        arr = singleStr.split(delimiter)
+        newArr = []
+        for item in arr:
+            try:
+                item = int(item)
+            except ValueError:
+                continue
+            finally:
+                newArr.append(item)
+        
+        return newArr
     
 
     @classmethod
