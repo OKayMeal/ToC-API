@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from ..dependencies import Dependencies
-from ..database import QueryManager
+from ..database.QueryManager import QueryManager
 from ..models.HighScore import HighScore
 
 router = APIRouter()
-queryManager = QueryManager.QueryManager()
+testKey = QueryManager().TEST_API_KEY
 
 @router.get("/highscores")
-async def read_highscores():
+async def read_highscores(api_key: str = Depends(Dependencies.verify_API_key)):
+    queryManager = QueryManager(test=(api_key == testKey))
     highscores = await queryManager.fetch_rows(queryManager.readAllHighScores)
 
     # reconvert from SQLite data format
@@ -19,6 +20,7 @@ async def read_highscores():
 
 @router.post("/highscores", status_code=status.HTTP_201_CREATED)
 async def post_highscores(highscore: HighScore, api_key: str = Depends(Dependencies.verify_API_key)):
+    queryManager = QueryManager(test=(api_key == testKey))
     modelDict = highscore.clean_data(highscore.model_dump())
     
     try:

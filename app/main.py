@@ -2,16 +2,18 @@ from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from .routers import highscores
-from .database import QueryManager
+from .database.QueryManager import QueryManager
 from .exceptions import exceptions
 
-queryManager = QueryManager.QueryManager()
+queryManager = QueryManager()
+testQueryManager = QueryManager(test=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # RUNS ON SERVER START
-    # create empty tables if they don't exist already
+    # create empty tables if they don't exist already for both prod and test db
     await queryManager.create_empty_tables()
+    await testQueryManager.create_empty_tables()
 
     # test
     # await queryManager.execute_many_query("""

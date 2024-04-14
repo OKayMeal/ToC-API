@@ -14,10 +14,14 @@ class Dependencies:
         if not x_api_key:
             raise HTTPException(status_code=401, detail="API key missing")
         
-        allKeys = await queryManager.fetch_rows(queryManager.readAllKeysType, { "type": "save" })
+        # check if it's a test key first
+        if x_api_key != queryManager.TEST_API_KEY:
+            allKeys = await queryManager.fetch_rows(queryManager.readAllKeysType, { "type": "save" })
 
-        if len(allKeys) > 0:
-            if x_api_key != allKeys[0]["key"]:
-                raise HTTPException(status_code=400, detail="Invalid API key")
+            if len(allKeys) > 0:
+                if x_api_key != allKeys[0]["key"]:
+                    raise HTTPException(status_code=400, detail="Invalid API key")
+        
+        return x_api_key
         
 
