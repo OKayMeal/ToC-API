@@ -1,6 +1,7 @@
 /cmds.txt
 /env
 /toc.db
+/test_toc.db
 /key.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
