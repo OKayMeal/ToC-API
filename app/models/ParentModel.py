@@ -5,6 +5,11 @@ from pydantic import BaseModel
 import uuid
 
 class ParentModel(BaseModel):
+    """
+    Parent Model for all Req Body models. This models contains some very useful class methods that allow
+    for converting data from a request body to a database record and vice versa. Also it conntains methods for
+    validation that might be common for many different models.
+    """
     uuid: str | None = None
     numbersBoundaries: ClassVar[dict[str, dict[str, int]]] = {
         "field": {
@@ -21,9 +26,9 @@ class ParentModel(BaseModel):
     @classmethod
     def revert_clean_data(cls, rows: list[dict[str, Any]] | list[Any], booleanFields: list[str], arrayFields: list[str]):
         """
-        Reverts the data clean up that was performed in order to save data in SQLite db
+        Reverts the data clean up that was performed in order to save data in SQLite db.
         This means converting bool fields from int (as saved in db - 0 or 1) back to bool
-        as well as strings to arrays of values (for the arrays of values turned into single string)
+        as well as strings to arrays of values (for the arrays of values turned into single string).
         The fields that are aimed for reconverting are to be passed as a list of strings - booleanFields and arrayFields respectively
         """
         # the format of data needs to get converted to list of dicts - probably from list of Record's
@@ -51,8 +56,9 @@ class ParentModel(BaseModel):
     @classmethod
     def clean_data(cls, modelDict: dict[str, Any]):
         """
-        Performs a data clean up preparing it for SQLite db
-        This means converting bools to int (0 or 1) and arrays to single strings
+        Performs a data clean up preparing it for SQLite db.
+        This means converting bools to int (0 or 1) and arrays to single strings.
+        Also adds current date and uuid.
         """
         for field, value in modelDict.items():
             # convert all boolean fields to ints

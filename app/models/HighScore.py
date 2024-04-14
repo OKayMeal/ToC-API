@@ -3,6 +3,11 @@ from typing import ClassVar
 from .ParentModel import ParentModel
 
 class HighScore(ParentModel):
+    """
+    Request Body Model for /highscores create model.
+    It contains the sets of valid values along with validators to ensure the data coming from request meets
+    this criteria. 
+    """
     # REQUEST BODY FIELDS #
     name: str
     date: str | None = None
