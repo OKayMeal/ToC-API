@@ -1,6 +1,8 @@
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
+from app.constants import TEST_API_KEY
+from .dependencies import Dependencies
 from .routers import highscores
 from .database.QueryManager import QueryManager
 from .exceptions import exceptions
@@ -42,7 +44,22 @@ async def db_connection_failed_handler(request: Request, exc: exceptions.Databas
 
 @app.get("/")
 def read_root():
-    return {"API": "ON"}
+    """Status check-up"""
+    return { "API": "ON" }
+
+
+@app.delete("/clean-test")
+async def clean_test_db(api_key: str = Depends(Dependencies.verify_API_key)):
+    """
+    Cleans test database
+    """
+    if (api_key == TEST_API_KEY):
+        await testQueryManager.execute_query(testQueryManager.deleteAllHighScores)
+        
+        return { "message": "All test data deleted successfully!" }
+    else:
+        raise HTTPException(status_code=400, detail="Test API Key required to delete test data")
+
 
 # ENDPOINTS CREATED FOR DEBUGGING PURPOSES
 @app.get("/keys")

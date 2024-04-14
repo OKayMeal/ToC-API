@@ -1,5 +1,6 @@
 from typing import Annotated
 from fastapi import Header, HTTPException
+from app.constants import TEST_API_KEY
 from .database.QueryManager import QueryManager
 
 queryManager = QueryManager()
@@ -15,7 +16,7 @@ class Dependencies:
             raise HTTPException(status_code=401, detail="API key missing")
         
         # check if it's a test key first
-        if x_api_key != queryManager.TEST_API_KEY:
+        if x_api_key != TEST_API_KEY:
             allKeys = await queryManager.fetch_rows(queryManager.readAllKeysType, { "type": "save" })
 
             if len(allKeys) > 0:
