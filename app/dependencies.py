@@ -21,7 +21,7 @@ class Dependencies:
 
             if len(allKeys) > 0:
                 if x_api_key != allKeys[0]["key"]:
-                    raise HTTPException(status_code=400, detail="Invalid API key")
+                    raise HTTPException(status_code=401, detail="Invalid API key")
         
         return x_api_key
         
