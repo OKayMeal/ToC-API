@@ -1,5 +1,6 @@
 from pydantic import field_validator
 from typing import ClassVar
+from app.constants import HIGHSCORE_VALID_LIST_VALUES, HIGHSCORE_VALID_NUMBERS_BOUNDARIES
 from .ParentModel import ParentModel
 
 class HighScore(ParentModel):
@@ -27,63 +28,14 @@ class HighScore(ParentModel):
     bosses_defeated: list[str]
 
     # VALID VALUES FOR VALIDATION PURPOSES #
-    numbersBoundaries: ClassVar[dict[str, dict[str, int]]] = {
-        "hp": {
-            "min": 150,
-            "max": 999
-        },
-        "attack": {
-            "min": 5,
-            "max": 99
-        },
-        "defense": {
-            "min": 5,
-            "max": 99
-        },
-        "speed": {
-            "min": 100,
-            "max": 999
-        },
-        "level": {
-            "min": 1,
-            "max": 8
-        },
-        "traps": {
-            "min": 0,
-            "max": 999
-        },
-        "keys": {
-            "min": 0,
-            "max": 999
-        },
-        "gold": {
-            "min": 0,
-            "max": 999
-        },
-        "enemies_killed": {
-            "min": 0,
-            "max": 999
-        },
-        "gold_looted": {
-            "min": 0,
-            "max": 999
-        },
-    }
-    validListValues: ClassVar[dict[str, list[str]]] = {
-        "equipment": [
-            'BootsOfHaste', 'NobleArmor', 'FireSword', 'ScarabShield', 'WandOfInferno',
-            'SkullStaff', 'ankhGolden', 'ankhSilver',
-        ],
-        "bosses_defeated": [
-            'pharaoh', 'ancientScarab',
-        ],
-    }
+    numbersBoundaries: ClassVar[dict[str, dict[str, int]]] = HIGHSCORE_VALID_NUMBERS_BOUNDARIES
+    validListValues: ClassVar[dict[str, list[str]]] = HIGHSCORE_VALID_LIST_VALUES
 
 
     # FIELD VALIDATORS #
     @field_validator('name')
     def name_validator(cls, name: str):
-        return cls.validate_string_length("name", name, 30, True)
+        return cls.validate_string_length("name", name, 30)
     
 
     @field_validator('time')
