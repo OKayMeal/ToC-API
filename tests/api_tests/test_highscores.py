@@ -1,4 +1,6 @@
 import copy
+from datetime import datetime
+from typing import Any
 from fastapi.testclient import TestClient
 from httpx import Client
 from tests.api_tests.ParentAPITest import ParentAPITest
@@ -29,6 +31,7 @@ class TestHighscores(ParentAPITest):
     validNumbersBoundaries = HIGHSCORE_VALID_NUMBERS_BOUNDARIES # valid boundaries in format { {"field1": "min": 1, "max": 5}, ... }
     invalidAPIKey = { "X-API-KEY": "invalidkey-123-123-123" }
     validAPIKey = { "X-API-KEY": TEST_API_KEY }
+    todayDate = datetime.now().strftime('%Y-%m-%d')
 
     # NEGATIVE TESTS #
 
@@ -224,4 +227,62 @@ class TestHighscores(ParentAPITest):
             assert expectedMessage in errorMessage, f"Expected message: {expectedMessage}. Actual message: {errorMessage} for field: name Input: {value}"
 
 
-                  
+    # POSITIVE TESTS # 
+    def test_scenario_post_get(self, client: TestClient | Client, setup_teardown):
+        """
+        Test POSTing a highscore and then GETting highscore
+        """
+        expectedStatus = 201
+        expectedMessage = "created successfully"
+
+        # 1. Post highscores
+        response = client.post(self.endpointURL, headers=self.validAPIKey, json=self.defaultPostReqBody)
+        assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code} for POST highscore"
+        
+        responseData = response.json()
+
+        # check if 'msg' key exists and it contains at least one item
+        assert "msg" in responseData and len(responseData["msg"]) > 0, f"Response JSON does not contain 'msg' key or it's empty for POST highscore"
+
+        responseMessage = responseData.get("msg", "")
+                
+        assert expectedMessage in responseMessage, f"Expected message: {expectedMessage}. Actual message: {responseMessage} for POST highscore"
+
+        # check if the response contains newly created highscore record
+        assert "highscore" in responseData and len(responseData["highscore"]) > 0, f"Response JSON does not contain 'highscore' key or it's empty for POST highscore"
+
+        # check if the today date has been added to the record
+        assert "date" in responseData["highscore"] and len(responseData["highscore"]["date"]) > 0, f"Response JSON does not contain 'date' key or it's empty for POST highscore"
+        assert self.todayDate in responseData["highscore"]["date"], f"The date in created record is not a current date. Today date: {self.todayDate}. Record date: {responseData['highscore']['date']}"
+
+        # check if UUID has been added to the record
+        assert "uuid" in responseData["highscore"] and len(responseData["highscore"]["uuid"]) > 0, f"Response JSON does not contain 'uuid' key or it's empty for POST highscore"
+        
+        # save the uuid
+        recordUUID = responseData["highscore"]["uuid"]
+
+        # 2. GET highscores
+        expectedStatus = 200
+        
+        response = client.get(self.endpointURL, headers=self.validAPIKey)
+        assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code} for GET highscore"
+
+        responseData = response.json()
+
+        # check if responseData is a list
+        assert isinstance(responseData, list), f"Expected type of response data is 'list'. Actual type: {type(responseData)}"
+
+        recordFound = False
+        for record in responseData:
+            # check if a record in responseData is a dict
+            assert isinstance(record, dict), f"Expected type of elements in response data is 'dict'. Actual type: {type(record)}"
+
+            # check if a record matches UUID
+            if record["uuid"] == recordUUID:
+                recordFound = True
+
+        assert recordFound, f"Record created in POST highscores with UUID '{recordUUID}' not found in GET highscores responseData: {responseData}"
+
+
+
+
