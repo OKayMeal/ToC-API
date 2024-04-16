@@ -30,5 +30,5 @@ async def post_highscores(highscore: HighScore, api_key: str = Depends(Dependenc
     
     return JSONResponse(
         status_code=201,
-        content=modelDict,
+        content={ "msg": "Highscore created successfully", "highscore": modelDict },
     )
