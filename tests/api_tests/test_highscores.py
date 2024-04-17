@@ -1,8 +1,8 @@
 import copy
 from datetime import datetime
-from typing import Any
 from fastapi.testclient import TestClient
 from httpx import Client
+from app.main import app
 from tests.api_tests.ParentAPITest import ParentAPITest
 from app.constants import HIGHSCORE_VALID_LIST_VALUES, HIGHSCORE_VALID_NUMBERS_BOUNDARIES, TEST_API_KEY
 
@@ -40,7 +40,7 @@ class TestHighscores(ParentAPITest):
         expectedStatus = 401
         expectedMessage = { "detail": "API key missing" }
 
-        response = client.get(self.endpointURL)
+        response = self.execute_HTTP_request(client=client, method="GET", url=self.endpointURL)
         assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code}"
         assert response.json() == expectedMessage, f"Expected message: {expectedMessage}. Actual message: {response.json()}"
 
@@ -49,7 +49,7 @@ class TestHighscores(ParentAPITest):
         expectedStatus = 401
         expectedMessage = { "detail": "API key missing" }
 
-        response = client.post(self.endpointURL, json=self.defaultPostReqBody)
+        response = self.execute_HTTP_request(client=client, method="POST", url=self.endpointURL, json=self.defaultPostReqBody)
         assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code}"
         assert response.json() == expectedMessage, f"Expected message: {expectedMessage}. Actual message: {response.json()}"
     
@@ -58,7 +58,7 @@ class TestHighscores(ParentAPITest):
         expectedStatus = 401
         expectedMessage = { "detail": "Invalid API key" }
 
-        response = client.get(self.endpointURL, headers=self.invalidAPIKey)
+        response = self.execute_HTTP_request(client=client, method="GET", url=self.endpointURL, headers=self.invalidAPIKey)
         assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code}"
         assert response.json() == expectedMessage, f"Expected message: {expectedMessage}. Actual message: {response.json()}"
     
@@ -67,7 +67,7 @@ class TestHighscores(ParentAPITest):
         expectedStatus = 401
         expectedMessage = { "detail": "Invalid API key" }
 
-        response = client.post(self.endpointURL, headers=self.invalidAPIKey, json=self.defaultPostReqBody)
+        response = self.execute_HTTP_request(client=client, method="POST", url=self.endpointURL, headers=self.invalidAPIKey, json=self.defaultPostReqBody)
         assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code}"
         assert response.json() == expectedMessage, f"Expected message: {expectedMessage}. Actual message: {response.json()}"
     
@@ -83,17 +83,14 @@ class TestHighscores(ParentAPITest):
             # delete reqd field
             del reqBody[requiredField]
 
-            response = client.post(self.endpointURL, headers=self.validAPIKey, json=reqBody)
-
+            response = self.execute_HTTP_request(client=client, method="POST", url=self.endpointURL, headers=self.validAPIKey, json=reqBody)
             assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code} for field: {requiredField}"
 
             responseData = response.json()
-
             # check if 'detail' key exists and it contains at least one item
             assert "detail" in responseData and len(responseData["detail"]) > 0, f"Response JSON does not contain 'detail' key or it's empty for field: {requiredField}"
 
             errorMessage = responseData["detail"][0].get("msg", "")
-            
             assert errorMessage == expectedMessage, f"Expected message: {expectedMessage}. Actual message: {errorMessage} for field: {requiredField} Input: {reqBody}"
     
 
@@ -126,17 +123,14 @@ class TestHighscores(ParentAPITest):
             # change the reqd field value to incorrect data type example
             reqBody[requiredField] = reqBodyInvalidDataTypes[requiredField]
 
-            response = client.post(self.endpointURL, headers=self.validAPIKey, json=reqBody)
-
+            response = self.execute_HTTP_request(client=client, method="POST", url=self.endpointURL, headers=self.validAPIKey, json=reqBody)
             assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code} for field: {requiredField}"
 
             responseData = response.json()
-
             # check if 'detail' key exists and it contains at least one item
             assert "detail" in responseData and len(responseData["detail"]) > 0, f"Response JSON does not contain 'detail' key or it's empty for field: {requiredField}"
 
             errorMessage = responseData["detail"][0].get("msg", "")
-            
             assert expectedMessage in errorMessage, f"Expected message: {expectedMessage}. Actual message: {errorMessage} for field: {requiredField} Input: {reqBody}"
 
 
@@ -157,17 +151,14 @@ class TestHighscores(ParentAPITest):
             # change field value to non-existent eq/boss
             reqBody[field] = invalidData[index]
 
-            response = client.post(self.endpointURL, headers=self.validAPIKey, json=reqBody)
-
+            response = self.execute_HTTP_request(client=client, method="POST", url=self.endpointURL, headers=self.validAPIKey, json=reqBody)
             assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code} for field: {field}"
 
             responseData = response.json()
-
             # check if 'detail' key exists and it contains at least one item
             assert "detail" in responseData and len(responseData["detail"]) > 0, f"Response JSON does not contain 'detail' key or it's empty for field: {field}"
 
             errorMessage = responseData["detail"][0].get("msg", "")
-            
             assert expectedMessage in errorMessage, f"Expected message: {expectedMessage}. Actual message: {errorMessage} for field: {field}. Input: {reqBody}"
     
 
@@ -189,17 +180,14 @@ class TestHighscores(ParentAPITest):
                 reqBody = copy.deepcopy(self.defaultPostReqBody)
                 reqBody[field] = inputVal
                 
-                response = client.post(self.endpointURL, headers=self.validAPIKey, json=reqBody)
-
+                response = self.execute_HTTP_request(client=client, method="POST", url=self.endpointURL, headers=self.validAPIKey, json=reqBody)
                 assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code} for field: {field}"
 
                 responseData = response.json()
-
                 # check if 'detail' key exists and it contains at least one item
                 assert "detail" in responseData and len(responseData["detail"]) > 0, f"Response JSON does not contain 'detail' key or it's empty for field: {field}"
 
                 errorMessage = responseData["detail"][0].get("msg", "")
-                
                 assert expectedMessage in errorMessage, f"Expected message: {expectedMessage}. Actual message: {errorMessage} for field: {field} Input: {inputVal}"
 
 
@@ -213,17 +201,14 @@ class TestHighscores(ParentAPITest):
             reqBody = copy.deepcopy(self.defaultPostReqBody)
             reqBody["name"] = value
                 
-            response = client.post(self.endpointURL, headers=self.validAPIKey, json=reqBody)
-
+            response = self.execute_HTTP_request(client=client, method="POST", url=self.endpointURL, headers=self.validAPIKey, json=reqBody)
             assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code} for field name"
 
             responseData = response.json()
-
             # check if 'detail' key exists and it contains at least one item
             assert "detail" in responseData and len(responseData["detail"]) > 0, f"Response JSON does not contain 'detail' key or it's empty for field: name"
 
             errorMessage = responseData["detail"][0].get("msg", "")
-                
             assert expectedMessage in errorMessage, f"Expected message: {expectedMessage}. Actual message: {errorMessage} for field: name Input: {value}"
 
 
@@ -236,16 +221,14 @@ class TestHighscores(ParentAPITest):
         expectedMessage = "created successfully"
 
         # 1. Post highscores
-        response = client.post(self.endpointURL, headers=self.validAPIKey, json=self.defaultPostReqBody)
+        response = self.execute_HTTP_request(client=client, method="POST", url=self.endpointURL, headers=self.validAPIKey, json=self.defaultPostReqBody)
         assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code} for POST highscore"
         
         responseData = response.json()
-
         # check if 'msg' key exists and it contains at least one item
         assert "msg" in responseData and len(responseData["msg"]) > 0, f"Response JSON does not contain 'msg' key or it's empty for POST highscore"
 
         responseMessage = responseData.get("msg", "")
-                
         assert expectedMessage in responseMessage, f"Expected message: {expectedMessage}. Actual message: {responseMessage} for POST highscore"
 
         # check if the response contains newly created highscore record
@@ -264,11 +247,10 @@ class TestHighscores(ParentAPITest):
         # 2. GET highscores
         expectedStatus = 200
         
-        response = client.get(self.endpointURL, headers=self.validAPIKey)
+        response = self.execute_HTTP_request(client=client, method="GET", url=self.endpointURL, headers=self.validAPIKey)
         assert response.status_code == expectedStatus, f"Expected status: {expectedStatus}. Actual status: {response.status_code} for GET highscore"
 
         responseData = response.json()
-
         # check if responseData is a list
         assert isinstance(responseData, list), f"Expected type of response data is 'list'. Actual type: {type(responseData)}"
 
