@@ -40,7 +40,7 @@ jobs:
         pytest -v
     - name: API tests with pytest and fastAPI.TestClient
       run: |
-        touch key.json
+        echo '{"type": "save", "key": "dummykey", "expires": "2124-05-15 12:00"}' > key.json
         cd tests/api_tests
         pytest -v
 
