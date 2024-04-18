@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from app.constants import TEST_API_KEY
@@ -17,22 +17,16 @@ async def lifespan(app: FastAPI):
     await queryManager.create_empty_tables()
     await testQueryManager.create_empty_tables()
 
-    # test
-    # await queryManager.execute_many_query("""
-    #                             INSERT INTO keys (type, key, expires)
-    #                             VALUES (:type, :key, :expires);
-    #                         """, [{"type": "save", "key": "123123", "expires": "2024-02-15 12:00"}, {"type": "save", "key": "12312322", "expires": "2024-05-15 12:00"}, {"type": "save", "key": "12312223", "expires": "2024-06-15 12:00"}])
-    
     # load and check the API key
     await queryManager.check_keys()
 
     yield
     # RUNS ON SERVER SHUTTING DOWN
 
-
     
 app = FastAPI(lifespan=lifespan)
 app.include_router(highscores.router)
+
 
 @app.exception_handler(exceptions.DatabaseConnectionError)
 async def db_connection_failed_handler(request: Request, exc: exceptions.DatabaseConnectionError):
@@ -46,6 +40,11 @@ async def db_connection_failed_handler(request: Request, exc: exceptions.Databas
 def read_root():
     """Status check-up"""
     return { "API": "ON" }
+
+
+@app.get("/favicon.ico")
+async def minimal_favicon():
+    return Response(content=b'', media_type='image/x-icon')
 
 
 @app.delete("/clean-test")
@@ -62,13 +61,13 @@ async def clean_test_db(api_key: str = Depends(Dependencies.verify_API_key)):
 
 
 # ENDPOINTS CREATED FOR DEBUGGING PURPOSES
-@app.get("/keys")
-async def read_keys_test():
-    """
-    For debugging purposes
-    """
-    keys = await queryManager.fetch_rows("SELECT * FROM keys")
+# @app.get("/keys")
+# async def read_keys_test():
+#     """
+#     For debugging purposes
+#     """
+#     keys = await queryManager.fetch_rows("SELECT * FROM keys")
 
-    return keys
+#     return keys
 
 
