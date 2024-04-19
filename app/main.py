@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from app.constants import TEST_API_KEY
@@ -26,6 +27,20 @@ async def lifespan(app: FastAPI):
     
 app = FastAPI(lifespan=lifespan)
 app.include_router(highscores.router)
+
+origins = [
+    "http://localhost:5173",
+    "https://tombs-of-cherem.vercel.app/",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
 
 
 @app.exception_handler(exceptions.DatabaseConnectionError)
