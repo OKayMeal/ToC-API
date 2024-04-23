@@ -30,7 +30,7 @@ app.include_router(highscores.router)
 
 origins = [
     "http://localhost:5173",
-    "https://tombs-of-cherem.vercel.app/",
+    "https://tombs-of-cherem.vercel.app",
 ]
 
 app.add_middleware(
