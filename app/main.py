@@ -1,8 +1,8 @@
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from fastapi.responses import JSONResponse
-from app.constants import TEST_API_KEY
+from fastapi.responses import FileResponse, JSONResponse
+from app.constants import DATABASE_FILE_PATH, TEST_API_KEY
 from .dependencies import Dependencies
 from .routers import highscores
 from .database.QueryManager import QueryManager
@@ -85,4 +85,7 @@ async def clean_test_db(api_key: str = Depends(Dependencies.verify_API_key)):
 
 #     return keys
 
+@app.get("/download-db")
+async def download_database():
+    return FileResponse(DATABASE_FILE_PATH, media_type='application/octet-stream', filename='toc.db')
 

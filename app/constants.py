@@ -4,6 +4,7 @@ rootDirFinder = RootDirFinder()
 
 # URLs and keys #
 DATABASE_URL = f"sqlite+aiosqlite:///{rootDirFinder.find_project_root(rootDirFinder.currentFilePath)}/toc.db"
+DATABASE_FILE_PATH = f"{rootDirFinder.find_project_root(rootDirFinder.currentFilePath)}/toc.db"
 TEST_DATABASE_URL = f"sqlite+aiosqlite:///{rootDirFinder.find_project_root(rootDirFinder.currentFilePath)}/test_toc.db"
 TEST_API_KEY = "5ce7bda6-74e8-4a0f-9616-b14b9ca5f3b1"
 KEY_URL = f"{rootDirFinder.find_project_root(rootDirFinder.currentFilePath)}/key.json"
