@@ -1,4 +1,4 @@
-#ToC-API
+# ToC-API
 API and automated API tests for the Tombs of Cherem web game
 
 **The Tombs of Cherem game - https://tombs-of-cherem.vercel.app/**
