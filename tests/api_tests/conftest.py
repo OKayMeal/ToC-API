@@ -20,7 +20,7 @@ def client(request):
     if test_env == "testClient":
         return TestClient(app)
     elif test_env == "prod":
-        return httpx.Client(base_url='') # add prod env url in the future TODO...
+        return httpx.Client(base_url='https://toc-api-vei8.onrender.com/highscores')
     elif test_env == "dev":
         return httpx.Client(base_url='http://127.0.0.1:8000')
     else:
