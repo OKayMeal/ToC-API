@@ -218,3 +218,14 @@ class ParentModel(BaseModel):
             raise ValueError(f'{fieldName} cannot be empty')
         
         return string
+    
+    
+    @classmethod
+    def validate_is_alpha_numeric(cls, value: str):
+        """
+        Performs basic validation if string is alpha numeric
+        """
+        if not re.match("^[a-zA-Z0-9_-]{1,50}$", value):
+            raise ValueError("Invalid chars in player name")
+        
+        return value

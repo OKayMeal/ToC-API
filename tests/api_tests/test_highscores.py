@@ -195,7 +195,11 @@ class TestHighscores(ParentAPITest):
         expectedStatus = 422
         expectedMessage = "Value error"
 
-        testValues = ["", "NameThatIsLongerThan30Character"] # 31 chars
+        testValues = [
+            "", "NameThatIsLongerThan30Character",
+            "<script>alert('XSS')</script>",
+            "n'); DROP TABLE highscores;--"
+        ]
 
         for value in testValues:
             reqBody = copy.deepcopy(self.defaultPostReqBody)

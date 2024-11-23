@@ -35,6 +35,7 @@ class HighScore(ParentModel):
     # FIELD VALIDATORS #
     @field_validator('name')
     def name_validator(cls, name: str):
+        cls.validate_is_alpha_numeric(name)
         return cls.validate_string_length("name", name, 30)
     
 
